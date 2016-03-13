@@ -1,0 +1,7 @@
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\bin\Debug\VGA.CodeMaatSharp.dll
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\bin\Debug\FSharp.Core.dll
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\bin\Debug\FSharp.Data.dll
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\bin\Debug\FSharp.Data.pdb
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\bin\Debug\FSharp.Data.xml
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\bin\Debug\FSharp.Core.xml
+C:\Repositories\Github\code-maat-sharp\VGA.CodeMaatSharp\VGA.CodeMaatSharp\obj\Debug\VGA.CodeMaatSharp.fsprojResolveAssemblyReference.cache

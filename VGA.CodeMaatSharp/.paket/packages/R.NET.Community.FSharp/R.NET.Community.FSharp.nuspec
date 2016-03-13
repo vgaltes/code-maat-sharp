@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>R.NET.Community.FSharp</id>
+    <version>1.6.4</version>
+    <title>R.NET F# Utility</title>
+    <authors>Kosei Abe, Jean-Michel Perraud</authors>
+    <owners>Kosei Abe, Jean-Michel Perraud</owners>
+    <licenseUrl>http://rdotnet.codeplex.com/license</licenseUrl>
+    <projectUrl>http://rdotnet.codeplex.com/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A .NET interoperability library to access the R statistical package from .NET languages. The library is designed for fast data exchange of arrays, in process.</description>
+    <summary>Interoperability library to access R from .NET languages</summary>
+    <releaseNotes>Fixed github #17 (do not crash when R_Visible is not exported).</releaseNotes>
+    <copyright>Copyright 2011-2014 RecycleBin, Copyright 2014-2015 CSIRO</copyright>
+    <tags>.NET R R.NET visualization statistics C# F#</tags>
+    <dependencies>
+      <dependency id="R.NET.Community" version="1.6.4" />
+    </dependencies>
+    <references>
+      <reference file="RDotNet.FSharp.dll" />
+    </references>
+  </metadata>
+</package>

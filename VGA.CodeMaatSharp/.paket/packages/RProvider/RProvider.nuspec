@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>RProvider</id>
+    <version>1.1.15</version>
+    <authors>BlueMountain Capital</authors>
+    <owners>BlueMountain Capital</owners>
+    <licenseUrl>https://github.com/BlueMountainCapital/FSharpRProvider/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/BlueMountainCapital/FSharpRProvider</projectUrl>
+    <iconUrl>https://raw.github.com/BlueMountainCapital/FSharpRProvider/master/docs/files/misc/logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>An F# Type Provider providing strongly typed access to the R statistical package. The type provider automatically discovers available R packages and makes them easily accessible from F#, so you can easily call powerful packages and visualization libraries from code running on the .NET platform.</description>
+    <summary>An F# Type Provider providing strongly typed access to the R statistical package.</summary>
+    <releaseNotes>Disable R.NET AutoPrint (fix #161 and perhaps #160).</releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <language>en-US</language>
+    <tags>F# fsharp R TypeProvider visualization statistics</tags>
+    <dependencies>
+      <dependency id="R.NET.Community" version="[1.6.4]" />
+      <dependency id="DynamicInterop" version="[0.7.4]" />
+      <dependency id="R.NET.Community.FSharp" version="[1.6.4]" />
+    </dependencies>
+    <references>
+      <reference file="RProvider.Runtime.dll" />
+      <reference file="RProvider.dll" />
+    </references>
+  </metadata>
+</package>
