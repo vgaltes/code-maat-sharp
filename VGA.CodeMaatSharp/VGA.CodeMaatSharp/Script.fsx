@@ -58,6 +58,14 @@ let totalCommits =
     commits
     |> Array.map extractCommitInfo
 
+let extensionBlacklist = [|".css"; ".feature.cs"; ".generated.cs"; ".config"; ".scss"; ".csproj"; ".cshtml"; ".min.js"|]
+
+let filteredCommits =
+    totalCommits
+    |> Array.map(fun c -> {CommitInfo = c.CommitInfo; 
+                           Files = c.Files 
+                           |> Array.filter(fun f -> extensionBlacklist 
+                                                    |> Array.forall(fun e -> not (f.FileName.EndsWith(e))))})
 
 // 2.2 - NUMBER OF FILES CHANGED ()
 let numberOfEntitiesChanged =
@@ -203,15 +211,6 @@ numberOfLinesByFile
 
 // 3.5 - NUMBER OF REVISIONS AND AUTHORS
 
-let extensionBlacklist = [|".css"; ".feature.cs"; ".generated.cs"; ".config"; ".scss"; ".csproj"; ".cshtml"; ".min.js"|]
-
-let filteredCommits =
-    totalCommits
-    |> Array.map(fun c -> {CommitInfo = c.CommitInfo; 
-                           Files = c.Files 
-                           |> Array.filter(fun f -> extensionBlacklist 
-                                                    |> Array.forall(fun e -> not (f.FileName.EndsWith(e))))})
-
 let numberOfRevisionsPerFile =
     filteredCommits
     |> Array.map(fun c -> c.Files |> Array.filter(fun f -> filesToStudy 
@@ -274,7 +273,6 @@ let NumberOfCommitsThreshold = 50
 type CommitedFile = { FileName : string; NumberOfCommits : int }
 
 let commitsPerFile =
-    // totalCommits
     filteredCommits
     |> Array.collect (fun c -> c.Files)
     |> Array.groupBy (fun c-> c.FileName)
@@ -330,15 +328,7 @@ let calculateFileStatistics (response: HttpResponseBody) =
         numLines, maxTabs, averageTabs
     | Binary(_) -> 0, 0., 0.  
 
-//let saveFileToDisk (fileUrl:string) (index: int) (response: HttpResponseBody) =
-//    match response with
-//    | Text(t) -> 
-//        let commitRelativeFilePath = "..\\..\\Data\\" +  Path.GetFileNameWithoutExtension fileUrl + "_" + index.ToString() + "_" + ".txt"
-//        let fileName = Path.Combine(__SOURCE_DIRECTORY__, commitRelativeFilePath) 
-//        File.WriteAllText(fileName, t)
-//    | Binary(b) -> ()   
 
-// "src/SFA.Apprenticeships.Web.Candidate/Controllers/VacancySearchController.cs"
 let getHistoryOf file =
     totalCommits
     |> Array.filter(fun cf -> cf.Files |> Array.filter(fun f -> f.FileName.Contains file) |> Array.length > 0)
@@ -375,74 +365,6 @@ complexity
     |> Array.map(fun f -> fst f, (third (snd f)))
     |> Chart.Line
 
-
-
-
-type FileCommits = {FileName: string; CommitHashes: string[]}
-let filesWithCommitHash = 
-    totalCommits
-    |> Array.collect(fun c -> c.Files |> Array.map(fun f -> f.FileName, c.CommitInfo.Hash.Substring(1, c.CommitInfo.Hash.Length - 2)))
-    |> Array.filter( fun f -> (fst f).EndsWith(".cs"))
-    |> Array.groupBy fst
-    |> Array.map(fun c -> {FileName = fst c; CommitHashes = (snd c) |> Array.map snd })
-    
-filesWithCommitHash
-    |> Array.filter (fun f -> f.FileName.Contains("VacancySearchController.cs"))
-    |> Array.map(fun f -> 
-        f.FileName, f.CommitHashes |> Array.map ( fun c ->
-            let fileUri = githubPath + c + "/" + f.FileName
-            fileUri
-        )        
-    )
-//    |> Array.iter(fun f -> snd f |> Array.iteri(fun i c -> 
-//        let request = Http.Request(c, silentHttpErrors = true)
-//        if ( request.StatusCode = 200 ) then
-//            saveFileToDisk c i request.Body            
-//        )
-//    )
-    |> Array.choose(fun f -> snd f |> Array.iter(fun c -> 
-        let request = Http.Request(c, silentHttpErrors = true)
-        if ( request.StatusCode = 200 ) then
-            Some (calculateFileStatistics request.Body)   
-        else None    
-        )        
-    )
-
-// Get all the files from disk and calculate the number of lines -> graph
-// Get all the files from disk and calculate the number of tabs -> graph
-// Get the latest file and calculate complexity (lines or tabs) and authors.
-
-let fileInfos = 
-    filesWithCommitHash
-    |> Array.filter (fun f -> f.FileName.Contains("VacancySearchController.cs"))
-    |> Array.map(fun f -> 
-        f.FileName, f.CommitHashes |> Array.map ( fun c ->
-            let fileUri = githubPath + c + "/" + f.FileName
-            fileUri
-        )        
-    )
-    |> Array.map(fun f -> fst f, snd f |> Array.map(fun c -> 
-        let request = Http.Request(c, silentHttpErrors = true)
-        if ( request.StatusCode = 200 ) then
-            let stats = calculateFileStatistics request.Body
-            Some (stats)
-        else 
-            None
-        )
-    )
-    |> Array.map(fun f -> fst f, snd f |> Array.map (fun s -> 
-        match s with
-        |Some x -> Some (Statistics.ArrayStatistics.MeanVariance (snd x))
-        |None -> None
-        ))
-    |> Array.collect snd
-    |> Array.filter(fun f -> f.IsSome)
-    |> Array.toSeq
-
-
-//type CommitInfo = {Hash : string; Author : string; TimeStamp : DateTime; Message : string}
-//type CommittedFile = {LinesAdded: int option; LinesDeleted: int option; FileName: string}
-//type Commit = {CommitInfo: CommitInfo; Files: CommittedFile[]}
 
 // 6.- AUTHORS
 let commitsPerAuthor =
