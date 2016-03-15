@@ -374,6 +374,81 @@ let commitsPerAuthor =
     |> Array.map(fun ca -> (fst ca, (snd ca) |> Array.length))
     |> Array.sortByDescending snd
 
+let calculateFileContributionByAuthor ((fileName: string), (authorAndComitedFileArray: (string * CommittedFile) [])) =
+    let sumLinesModified (committedFile : CommittedFile) =
+        let getLines lines =
+            match lines with
+            | Some(x) -> x
+            | None -> 0
+
+        ( getLines committedFile.LinesAdded ) + (getLines committedFile.LinesAdded)        
+
+    let commitsGroupedByAuthor = authorAndComitedFileArray |> Array.groupBy fst
+
+    fileName, commitsGroupedByAuthor 
+                |> Array.map ( fun f -> fst f, (snd f) |> Array.sumBy ( fun c -> sumLinesModified (snd c)))
+
+let commitsByFile =
+    totalCommits
+    |> Array.collect ( fun c -> c.Files |> Array.map ( fun f -> c.CommitInfo.Author, f))
+    |> Array.groupBy (fun f -> (snd f).FileName)
+    |> Array.map ( fun f -> calculateFileContributionByAuthor f)
+
+
+let data =
+    [
+        "Global", "", 0
+        "America", "Global", 0
+        "Europe", "Global", 0
+        "Asia", "Global", 0
+        "Australia", "Global", 0
+        "Africa", "Global", 0
+        "Brazil", "America", 11
+        "USA", "America", 54
+        "Mexico", "America", 24
+        "Canada", "America", 16
+        "France", "Europe", 42
+        "Germany", "Europe", 31
+        "Sweden", "Europe", 22
+        "Italy", "Europe", 17
+        "UK", "Europe", 21
+        "China", "Asia", 36
+        "Japan", "Asia", 20
+        "India", "Asia", 40
+        "Laos", "Asia", 4
+        "Mongolia", "Asia", 1
+        "Israel", "Asia", 12
+        "Iran", "Asia", 18
+        "Pakistan", "Asia", 11
+        "Egypt", "Africa", 21
+        "S. Africa", "Africa", 30
+        "Sudan", "Africa", 12
+        "Congo", "Africa", 10
+        "Zaire", "Africa", 8
+    ]
+
+let options =
+    Options(
+        minColor = "#f00",
+        midColor = "#ddd",
+        maxColor = "#0d0",
+        headerHeight = 15,
+        fontColor = "black",
+        showScale = true        
+    )
+ 
+let treemap =
+    data
+    |> Chart.Treemap
+    |> Chart.WithLabels
+        [
+            "Location"
+            "Parent"
+            "Market trade volume (size)"
+        ]
+    |> Chart.WithOptions options
+
+
 (**
 let data =
     let rnd = Random()
@@ -386,8 +461,11 @@ data
 |> Chart.Calendar
 **)
 
+
+// 7 - COMMITS IN TIME
 totalCommits
 |> Array.map ( fun c -> {CommitInfo = {Hash = c.CommitInfo.Hash; Author = consolidateNames c.CommitInfo.Author; TimeStamp = c.CommitInfo.TimeStamp; Message = c.CommitInfo.Message}; Files = c.Files})
 |> Array.groupBy(fun c -> c.CommitInfo.TimeStamp.Date)
 |> Array.map(fun c -> fst c, (snd c) |> Array.length)
 |> Chart.Calendar
+
