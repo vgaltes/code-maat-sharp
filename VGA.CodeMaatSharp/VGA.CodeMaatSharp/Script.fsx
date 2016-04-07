@@ -8,8 +8,9 @@ open System.IO
 open XPlot.GoogleCharts
 open FSharp.Data
 open MathNet.Numerics
+open System.Globalization
 
-// git log --pretty=format:'[%H],%aN,%ad,%s' --date=short --numstat > sfa-log.log
+// git log --pretty=format:'[%H],%aN,%ad,%s' --date=local --numstat > sfa-log.log
 
 // --------------------------
 // 1.- PARSE GIT LOG FILE
@@ -25,8 +26,10 @@ type Commit = {CommitInfo: CommitInfo; Files: CommittedFile[]}
 let filePath = Path.Combine(__SOURCE_DIRECTORY__, "..\..\Data\sfa-log.log")
 let file = File.ReadAllText(filePath)
 
-type CommitInfoCsv = CsvProvider<"Hash,Author,Date,Message", HasHeaders = false, Schema = "Hash,Author,Date(string),Message">
-type CommitLineCsv = CsvProvider<"LinesAdded\tLinesDeleted\tFile", HasHeaders = false, Schema = "LinesAdded(int option),LinesDeleted(int option),FileName">
+type CommitInfoCsv = CsvProvider<"Hash,Author,Date,Message", HasHeaders = false, 
+                                    Schema = "Hash,Author,Date(string),Message">
+type CommitLineCsv = CsvProvider<"LinesAdded\tLinesDeleted\tFile", HasHeaders = false, 
+                                    Schema = "LinesAdded(int option),LinesDeleted(int option),FileName">
 
 let commits = file.Split([|LineBreak + LineBreak|], StringSplitOptions.RemoveEmptyEntries)
 
@@ -36,15 +39,19 @@ let extractCommitInfo (commit:string) =
 
     let extractCommitedFilesInfo c = 
         let commitFileLine = CommitLineCsv.Parse(c).Rows |> Seq.head
-        {LinesAdded = commitFileLine.LinesAdded; LinesDeleted = commitFileLine.LinesDeleted; FileName = commitFileLine.FileName}
+        {LinesAdded = commitFileLine.LinesAdded; 
+        LinesDeleted = commitFileLine.LinesDeleted; FileName = commitFileLine.FileName}
 
     let commitLines = commit.Split([|LineBreak|], StringSplitOptions.RemoveEmptyEntries)    
     let commitInfoLine = commitLines |> Array.takeWhile(isCommitInfoLine) |> Array.last
     let fileLines = commitLines |> Array.skipWhile(isCommitInfoLine)
     
     let infoRow = CommitInfoCsv.Parse(commitInfoLine).Rows |> Seq.head
-    let commitInfo = {Hash = infoRow.Hash; Author = infoRow.Author; TimeStamp = DateTime.ParseExact(infoRow.Date,"ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture); Message = infoRow.Message}
-
+    let commitInfo = {Hash = infoRow.Hash; Author = infoRow.Author; 
+        TimeStamp = DateTime.ParseExact(infoRow.Date,"ddd MMM d HH:mm:ss yyyy", 
+                                        CultureInfo.InvariantCulture); 
+    Message = infoRow.Message}
+        
     let fileRows = fileLines |> Array.map extractCommitedFilesInfo
     
     {CommitInfo = commitInfo; Files = fileRows}
@@ -58,7 +65,7 @@ let totalCommits =
     commits
     |> Array.map extractCommitInfo
 
-let extensionBlacklist = [|".css"; ".feature.cs"; ".generated.cs"; ".config"; ".scss"; ".csproj"; ".cshtml"; ".min.js"|]
+let extensionBlacklist = [|".css"; ".feature.cs"; ".generated.cs"; ".config"; ".scss"; ".csproj"; ".cshtml"; ".min.js"; ".sln"|]
 
 let filteredCommits =
     totalCommits
@@ -68,14 +75,14 @@ let filteredCommits =
                                                     |> Array.forall(fun e -> not (f.FileName.EndsWith(e))))})
 
 // 2.2 - NUMBER OF FILES CHANGED ()
-let numberOfEntitiesChanged =
+let numberOfFilesChanged =
     totalCommits
     |> Array.collect(fun c -> c.Files)
     |> Array.length
 
 
 // 2.3 - NUMBER OF FILE
-let numberOfEntities = 
+let numberOfFiles = 
     totalCommits
     |> Array.collect(fun c -> c.Files)
     |> Array.groupBy(fun f -> f.FileName)
@@ -83,7 +90,7 @@ let numberOfEntities =
     
 
 // 2.4 - FILE BY TYPE
-let fileByType =
+let filesByType =
     totalCommits
     |> Array.collect(fun c -> c.Files)
     |> Array.distinctBy(fun f -> f.FileName)
@@ -94,34 +101,17 @@ let fileByType =
 
 // 2.5 - CHART OF FYLE BY TYPE
 let chartFileByType =
-    fileByType
+    filesByType
     |> Chart.Pie
     |> Chart.WithLegend true
     |> Chart.WithSize(640, 480)
 
 
 // 2.6 - GET AUTHORS
-let mapAuthors = 
-    Map.empty
-        .Add("Janusz Kali Kaliszczak", "Janusz 'Kali' Kaliszczak")
-        .Add("iterative-it", "David Winchurch")
-        .Add("charge-valtech", "Henry Charge")
-        .Add("SandeepYadav", "Sandeep Yadav")
-        .Add("sandeep-sfa", "Sandeep Yadav")
-        .Add("kristerbone", "Krister Bone")
-        .Add("Vicen├º Garc├¡a Alt├®s", "Vicenc Garcia-Altes")
-        .Add("vgaltes", "Vicenc Garcia-Altes")
-
-let consolidateNames (name:string) =
-    match name with
-    |_ when mapAuthors.ContainsKey name -> (mapAuthors.TryFind name).Value
-    |authorName -> authorName
-
 let authors =
     totalCommits
     |> Array.groupBy(fun c -> c.CommitInfo.Author)
     |> Array.map(fun (a, _) -> a)
-    |> Array.map consolidateNames
     |> Array.distinct
 
 let numberOfAuthors =
@@ -136,6 +126,7 @@ let numberOfAuthors =
 // 3.1 - NUMBER OF REVISIONS BY FILE
 let numberOfRevisionsByFile =
     totalCommits
+    //filteredCommits
     |> Array.collect(fun c -> c.Files)
     |> Array.groupBy(fun f -> f.FileName)
     |> Array.map ( fun c -> fst c, (snd c).Length)
@@ -164,8 +155,8 @@ let getFileFromGitHub fileUrl =
 let listOfFiles =
     totalCommits
     |> Array.collect(fun c -> c.Files)
-    |> Array.groupBy(fun f -> f.FileName)
-    |> Array.map fst
+    |> Array.map(fun c -> c.FileName )
+    |> Array.distinct
 
 let numberOfLinesOf file =
     let gitHubPath = Path.Combine ( gitHubRawContentBaseAddress, file)
@@ -218,7 +209,7 @@ let numberOfRevisionsPerFile =
                                                             |> Array.map(fun f -> (c.CommitInfo.Author, f)))
     |> Array.collect id
     |> Array.groupBy(fun (_,f) -> f.FileName)
-    |> Array.map(fun(f, af) -> f, af |> Array.length)
+    |> Array.map(fun(f, af) -> getFileNameFromPath f, af |> Array.length)
     |> Array.sortByDescending snd
 
 let numberOfAuthorsPerFile =
@@ -227,9 +218,8 @@ let numberOfAuthorsPerFile =
                                                             |> Array.contains f.FileName) 
                                                             |> Array.map(fun f -> (c.CommitInfo.Author, f)))
     |> Array.collect(fun x -> x)
-    |> Array.map(fun (a,f) -> (consolidateNames a), f)
     |> Array.groupBy(fun (_,f) -> f.FileName)
-    |> Array.map(fun(f, af) -> f, af |> Array.groupBy(fun (a,_) -> a) |> Array.length)
+    |> Array.map(fun(f, af) -> getFileNameFromPath f, af |> Array.groupBy(fun (a,_) -> a) |> Array.length)
     |> Array.sortByDescending snd
 
 // Combined chart
@@ -257,10 +247,11 @@ let committedTogether =
     |> Array.map(fun c -> c.Files |> Array.map (fun f -> f.FileName) |> combinator)
     |> Array.collect id
     |> Array.groupBy id
-    |> Array.sortByDescending ( fun m -> snd m |> Array.length)
+    |> Array.sortByDescending ( snd >> Array.length )
     |> Array.map(fun (k, a) -> {File1 = fst k; 
                                 File2 = snd k; 
                                 TimesCommitedTogether = (a |> Array.length)})    
+
 
 committedTogether
 |> Array.take 20
@@ -367,14 +358,14 @@ complexity
 
 
 // 6.- AUTHORS
-let commitsPerAuthor =
-    totalCommits
-    |> Array.map ( fun c -> {CommitInfo = {Hash = c.CommitInfo.Hash; Author = consolidateNames c.CommitInfo.Author; TimeStamp = c.CommitInfo.TimeStamp; Message = c.CommitInfo.Message}; Files = c.Files})
-    |> Array.groupBy ( fun c -> c.CommitInfo.Author)
-    |> Array.map(fun ca -> (fst ca, (snd ca) |> Array.length))
-    |> Array.sortByDescending snd
+//let commitsPerAuthor =
+//    totalCommits
+//    |> Array.groupBy ( fun c -> c.CommitInfo.Author)
+//    |> Array.map(fun ca -> (fst ca, (snd ca) |> Array.length))
+//    |> Array.sortByDescending snd
 
-let calculateFileContributionByAuthor ((fileName: string), (authorAndComitedFileArray: (string * CommittedFile) [])) =
+let calculateFileContributionByAuthor ((authorAndComitedFileArray: 
+                                       (string * CommittedFile) [])) =
     let sumLinesModified (committedFile : CommittedFile) =
         let getLines lines =
             match lines with
@@ -385,48 +376,27 @@ let calculateFileContributionByAuthor ((fileName: string), (authorAndComitedFile
 
     let commitsGroupedByAuthor = authorAndComitedFileArray |> Array.groupBy fst
 
-    fileName, commitsGroupedByAuthor 
-                |> Array.map ( fun f -> fst f, (snd f) |> Array.sumBy ( fun c -> sumLinesModified (snd c)))
-
-let commitsByFile =
+    commitsGroupedByAuthor 
+        |> Array.map ( fun f -> fst f, (snd f) |> Array.sumBy ( sumLinesModified << snd ))  
+        |> Array.sortByDescending snd
+        
+let commitsByFile fileName =
     totalCommits
     |> Array.collect ( fun c -> c.Files |> Array.map ( fun f -> c.CommitInfo.Author, f))
-    |> Array.groupBy (fun f -> (snd f).FileName)
-    |> Array.map ( fun f -> calculateFileContributionByAuthor f)
+    |> Array.filter (fun f -> (snd f).FileName.Contains fileName)
+    
 
+let contributionsByAuthorOn = commitsByFile >> calculateFileContributionByAuthor     
+
+
+let fileName = "src/SFA.Apprenticeships.Web.Candidate/Controllers/ApprenticeshipSearchController.cs"
 
 let data =
-    [
-        "Global", "", 0
-        "America", "Global", 0
-        "Europe", "Global", 0
-        "Asia", "Global", 0
-        "Australia", "Global", 0
-        "Africa", "Global", 0
-        "Brazil", "America", 11
-        "USA", "America", 54
-        "Mexico", "America", 24
-        "Canada", "America", 16
-        "France", "Europe", 42
-        "Germany", "Europe", 31
-        "Sweden", "Europe", 22
-        "Italy", "Europe", 17
-        "UK", "Europe", 21
-        "China", "Asia", 36
-        "Japan", "Asia", 20
-        "India", "Asia", 40
-        "Laos", "Asia", 4
-        "Mongolia", "Asia", 1
-        "Israel", "Asia", 12
-        "Iran", "Asia", 18
-        "Pakistan", "Asia", 11
-        "Egypt", "Africa", 21
-        "S. Africa", "Africa", 30
-        "Sudan", "Africa", 12
-        "Congo", "Africa", 10
-        "Zaire", "Africa", 8
-    ]
-
+    (fileName, "", 0)::
+    (contributionsByAuthorOn fileName
+    |> Array.map(fun u -> fst u, fileName, snd u)
+    |> List.ofArray)
+    
 let options =
     Options(
         minColor = "#f00",
@@ -448,6 +418,18 @@ let treemap =
         ]
     |> Chart.WithOptions options
 
+let filesOf userName =
+    totalCommits
+    |> Array.collect(fun c -> c.Files)
+    |> Array.distinctBy(fun f -> f.FileName)
+    |> Array.map(fun f -> f.FileName, commitsByFile f.FileName)
+    |> Array.map (fun f -> (fst f), (snd f) |> Array.head)
+    |> Array.filter(fun f -> (fst (snd f)) = userName)
+    |> Array.map fst
+
+let filesOfVicenc = filesOf "Iron Man"
+// Order the above information by contributions.
+// Given an author, extract the files where he's the main contributor.
 
 (**
 let data =
@@ -464,7 +446,6 @@ data
 
 // 7 - COMMITS IN TIME
 totalCommits
-|> Array.map ( fun c -> {CommitInfo = {Hash = c.CommitInfo.Hash; Author = consolidateNames c.CommitInfo.Author; TimeStamp = c.CommitInfo.TimeStamp; Message = c.CommitInfo.Message}; Files = c.Files})
 |> Array.groupBy(fun c -> c.CommitInfo.TimeStamp.Date)
 |> Array.map(fun c -> fst c, (snd c) |> Array.length)
 |> Chart.Calendar
