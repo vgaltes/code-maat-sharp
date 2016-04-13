@@ -85,7 +85,7 @@ let numberOfFilesChanged =
 let numberOfFiles = 
     totalCommits
     |> Array.collect(fun c -> c.Files)
-    |> Array.groupBy(fun f -> f.FileName)
+    |> Array.distinctBy(fun f -> f.FileName)
     |> Array.length
     
 
@@ -129,7 +129,7 @@ let numberOfRevisionsByFile =
     //filteredCommits
     |> Array.collect(fun c -> c.Files)
     |> Array.groupBy(fun f -> f.FileName)
-    |> Array.map ( fun c -> fst c, (snd c).Length)
+    |> Array.map ( fun c -> fst c, snd c |> Array.length)
     |> Array.sortByDescending snd
     |> Array.take 10
 
@@ -226,6 +226,8 @@ let numberOfAuthorsPerFile =
 [|numberOfRevisionsPerFile;numberOfAuthorsPerFile|]
 |> Chart.Bar
 |> Chart.WithLabels ["Number of revisions"; "Number of authors"]
+
+
 
 
 // 4.- COUPLING
