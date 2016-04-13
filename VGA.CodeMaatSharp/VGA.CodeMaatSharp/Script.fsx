@@ -424,10 +424,10 @@ let filesOf userName =
     totalCommits
     |> Array.collect(fun c -> c.Files)
     |> Array.distinctBy(fun f -> f.FileName)
-    |> Array.map(fun f -> f.FileName, commitsByFile f.FileName)
-    |> Array.map (fun f -> (fst f), (snd f) |> Array.head)
-    |> Array.filter(fun f -> (fst (snd f)) = userName)
-    |> Array.map fst
+    |> Array.map(fun f -> contributionsByAuthorOn f.FileName, f.FileName)
+    |> Array.filter(fun f -> fst (fst f |> Array.head)  = userName )
+    |> Array.map snd
+    
 
 let filesOfVicenc = filesOf "Iron Man"
 // Order the above information by contributions.
